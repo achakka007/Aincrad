@@ -329,7 +329,7 @@ class User:
         print("Name = {}".format(self.username))
         print("Personal Attribute = {}".format(
             self.userPersonalAttribute.name))
-        print("Health = {}".format(self.getHealth()))
+        print("Health = {}".format(round(self.getHealth())))
         print("Attack = {}".format(self.getAttack()))
         print("Stamina = {}".format(self.getStamina()))
         # print("Defense(Head) = {}".format(self.getDefense("Head")))

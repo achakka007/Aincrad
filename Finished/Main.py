@@ -24,12 +24,7 @@ def main():
     a.showUser()
     b.showUser()
 
-    # print("Base Stats = ", a.userBaseCStats)
-    # print("Job Boosts = ", a.userJob.cStatBoosts)
-    # print("PA Boosts(C) = ", a.userPersonalAttribute.cStatPMods)
-    # print("PA Boosts(O) = ", a.userPersonalAttribute.oStatPMods)
-
-    # combat(a, b, showDmg = True)
+    # combat(a, b, showDmg=True)
     combatV2(a, b)
 
 
@@ -70,12 +65,11 @@ def combatV2(user1, user2):
         # USER 1 INPUT
         print("ROUND:   {}".format(round))
         combatantDetails(u1)
-        userChoice01 = input(
-            "{}: Choose Attack, Dodge or Block: ".format(u1.username))
+        userChoice01 = input("{}: Choose Attack, Dodge or Block: ".format(u1.username))
         print()
 
         if userChoice01 == "Attack":
-            print("Attacks:Cooldowns => {}".format(
+            print("Attacks: Cooldowns => {}".format(
                 waitTimes(u1, u1AtkHistory, round)))
             userChoice1 = input("Choose attack: ").lower()
             if userChoice1 in u1.userJob.attacks:  # Attack Type Calculations
@@ -83,8 +77,7 @@ def combatV2(user1, user2):
                 atkFunc1 = u1.userJob.attacks[userChoice1]
                 # Array of Attack Details
                 atkType1 = atkFunc1(u1.userJob)
-                atkType1['rounds passed'] = round - \
-                    u1AtkHistory[userChoice1] - 1
+                atkType1['rounds passed'] = round - u1AtkHistory[userChoice1] - 1
                 # Update History
                 u1AtkHistory[userChoice1] = round
             else:
@@ -121,14 +114,13 @@ def combatV2(user1, user2):
         print()
 
         if userChoice02 == "Attack":
-            print("Attacks:Cooldowns => {}".format(
+            print("Attacks: Cooldowns => {}".format(
                 waitTimes(u2, u2AtkHistory, round)))
             userChoice2 = input("Choose attack: ").lower()
             if userChoice2 in u2.userJob.attacks:
                 atkFunc2 = u2.userJob.attacks[userChoice2]
                 atkType2 = atkFunc2(u2.userJob)
-                atkType2['rounds passed'] = round - \
-                    u2AtkHistory[userChoice2] - 1
+                atkType2['rounds passed'] = round - u2AtkHistory[userChoice2] - 1
                 u2AtkHistory[userChoice2] = round
             else:
                 break
@@ -153,7 +145,7 @@ def combatV2(user1, user2):
             break
         os.system('clear')
 
-        # Dodge, Block, Attack?
+        # Dodge, Block, Attack Combinations
         if userChoice01 == "Attack" and userChoice02 == "Attack":
             attackAttack(u1, u2, atkType1, atkType2)
         elif userChoice01 == "Dodge" and userChoice02 == "Dodge":
@@ -189,8 +181,8 @@ def combatV2(user1, user2):
 
         print()
         print("<<ROUND RESULTS>>")
-        print("U1 HP = {}".format(u1.getHealth()))
-        print("U2 HP = {}".format(u2.getHealth()))
+        print("U1 HP = {}".format(round(u1.getHealth())))
+        print("U2 HP = {}".format(round(u2.getHealth())))
         print("<<<<<<<--->>>>>>>")
         input("Continue?")
         os.system('clear')
@@ -207,6 +199,7 @@ def combatV2(user1, user2):
     else:
         print("Error")
 
+    print()
     print("U1 FINAL HP = {}".format(u1.hPSplit))
     print("U2 FINAL HP = {}".format(u2.hPSplit))
 
@@ -347,9 +340,12 @@ def selectTarget(user, bodyPart):
 # COMBAT 2 HELPERS
 
 
-def attack(uA, uR, atkType, dmgModifier=1):
-    dmg1 = round(uA.getAttack(
-    ) * atkType['atkmod'] - uR.getDefense(atkType['target'])) * dmgModifier
+def attack(uA, uR, atkType, success=True, dmgModifier=1):
+    uA.changeStamina(atkType['cost'])
+    if (not success):
+        return
+
+    dmg1 = round(uA.getAttack() * atkType['atkmod'] - uR.getDefense(atkType['target'])) * dmgModifier
     if dmg1 < 0 or uA.getStamina() < 0 or atkType['rounds passed'] < atkType['cooldown']:
         print("{} has failed to attack {}".format(uA.username, uR.username))
         uR.changeHealth(0, atkType['target'])
@@ -357,10 +353,8 @@ def attack(uA, uR, atkType, dmgModifier=1):
         if (random.randint(0, 100) < atkType['accuracy']):  # Accuracy Check
             # Damage Dealt && Check if body part is disabled.
             if uR.changeHealth(dmg1 * -1, atkType['target']):
-                print("{} has lost their {}".format(
-                    uR.username, atkType['target']))
-            print("{} has done {} dmg to {}".format(
-                uA.username, dmg1, uR.username))
+                print("{} has lost their {}".format(uR.username, atkType['target']))
+            print("{} has done {} dmg to {}".format(uA.username, dmg1, uR.username))
         else:
             print("{} missed".format(uA.username))
 
@@ -368,39 +362,32 @@ def attack(uA, uR, atkType, dmgModifier=1):
 def attackAttack(u1, u2, atkType1, atkType2):
     print("Both players have attacked each other")
     # USER 1 Attack
-    u1.changeStamina(atkType1['cost'])
     attack(u1, u2, atkType1)
 
     # USER 2 Attack
-    u2.changeStamina(atkType2['cost'])
     attack(u2, u1, atkType2)
 
 
 def attackDodge(uAttacker, uDodger, atkType, dodgeType):
-    uAttacker.changeStamina(atkType['cost'])
     uDodger.changeStamina(dodgeType['cost'])
     if dodgeType['success'] and uDodger.getStamina() > 0:
-        print("{} has managed to evade {}'s attack".format(
-            uDodger.username, uAttacker.username))
+        print("{} has managed to evade {}'s attack".format(uDodger.username, uAttacker.username))
+        attack(uAttacker, uDodger, atkType, True)
     else:
-        print("{} has failed to evade {}'s attack".format(
-            uDodger.username, uAttacker.username))
-        attack(uAttacker, uDodger, atkType)
+        print("{} has failed to evade {}'s attack".format(uDodger.username, uAttacker.username))
+        attack(uAttacker, uDodger, atkType, False)
 
 
 def attackBlock(uAttacker, uBlocker, atkType, blockType):
-    uAttacker.changeStamina(atkType['cost'])
     uBlocker.changeStamina(blockType['cost'])
 
     if (uBlocker.getStamina() > 0):
         atkType['target'] = blockType['target']
-        print("{} has blocked {}'s attack with their {}".format(
-            uBlocker.username, uAttacker.username, blockType['target']))
-        attack(uAttacker, uBlocker, atkType, blockType['damage reduction'])
+        print("{} has blocked {}'s attack with their {}".format(uBlocker.username, uAttacker.username, blockType['target']))
+        attack(uAttacker, uBlocker, atkType, True, blockType['damage reduction'])
     else:
-        print("{} failed to block {}'s attack with their {}".format(
-            uBlocker.username, uAttacker.username, blockType['target']))
-        attack(uAttacker, uBlocker, atkType)
+        print("{} failed to block {}'s attack with their {}".format(uBlocker.username, uAttacker.username, blockType['target']))
+        attack(uAttacker, uBlocker, atkType, True)
 
 
 def BlockDodge(uBlocker, uDodger, blockType, dodgeType):
@@ -427,22 +414,22 @@ def setAtkHistory(user):
         atkHistory[key] = 0
     return atkHistory
 
-# AESTHETICS
 
+# AESTHETICS
 
 def combatantDetails(user):
     print()
     print("User:    {}".format(user.username))
-    print("Health:  {}".format(user.getHealth()))
-    print("Stamina: {}".format(user.getStamina()))
+    print("Health:  {}".format(round(user.getHealth())))
+    print("Stamina: {}".format(round(user.getStamina())))
     print()
 
 
 def waitTimes(user, atkHistory, round):
     waitTimes = {}
     for key, value in atkHistory.items():
-        waitTimes[key] = user.userJob.attackCooldowns[key] - \
-            (round - value - 1)
+        waitTime = user.userJob.attackCooldowns[key] - (round - value - 1)
+        waitTimes[key] = waitTime if waitTime > 0 else 0
 
     return waitTimes
 
